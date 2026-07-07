@@ -1,4 +1,4 @@
-# Probylas_Turnkey_post
+# Probylas Turnkey post
 Barebone post processor for the Probylas Turnkey
 
 This post-processor uses the tool feeds. The feeds can be provided in various units, but not in mm/s, which the Probylas expects. **This post-processor takes care of the conversion, so please the correct units.** If you want a feed of 10 mm/s, provide e.g. 600 mm/min, which this post-processor will convert to F10 (= 10 mm/s).
