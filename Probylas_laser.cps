@@ -9,7 +9,7 @@
 
 description = "Probylas Laser";
 vendor = "IPGG";
-vendorUrl = "https://github.com/Lars-Kool/";
+vendorUrl = "https://github.com/Lars-Kool/Probylas_Turnkey_post";
 legal = "Copyright (C) 2026 by Plateforme Technologique. All rights reserved.";
 certificationLevel = 2;
 minimumRevision = 45702;
@@ -113,6 +113,14 @@ properties = {
     type       : "number",
     value      : 5,
     scope      : "post"
+  },
+  dwellTime: {
+    title      : "Dwell Time",
+    description: "Sets the dwell time (P) for cutting. The value is in the range 0.001-99.999 seconds.",
+    group      : "preferences",
+    type       : "number",
+    value      : 0.1,
+    scope      : "post"
   }
 };
 
@@ -138,6 +146,7 @@ var yOutput = createVariable({prefix:"Y"}, xyzFormat);
 var zOutput = createVariable({prefix:"Z"}, xyzFormat);
 var feedOutput = createVariable({prefix:"F"}, feedFormat);
 var sOutput = createVariable({prefix:"S", force:true}, powerFormat);
+var dwellOutput = createVariable({prefix:"P", force:true}, secFormat);
 
 // circular output
 var iOutput = createVariable({prefix:"I"}, xyzFormat);
@@ -148,8 +157,10 @@ var gPlaneModal = createModal({onchange:function () {gMotionModal.reset();}}, gF
 var gAbsIncModal = createModal({}, gFormat); // modal group 3 // G90-91
 var gFeedModeModal = createModal({}, gFormat); // modal group 5 // G93-94
 var gUnitModal = createModal({}, gFormat); // modal group 6 // G20-21
+var gDwellModal = createModal({}, gFormat, dwellOutput); // modal group 8 // G4
 
 var WARNING_WORK_OFFSET = 0;
+var isSpotWeld = false;
 
 /**
   Writes the specified block.
@@ -213,6 +224,9 @@ function onSection() {
     error(localize("The CNC does not support the required tool/process. Only laser cutting is supported."));
     return;
   }
+
+  writeComment(currentSection.getParameter("operation-comment"));
+  isSpotWeld = (currentSection.getParameter("operation-comment") == "spotweld");
 
   var remaining = currentSection.workPlane;
   if (!isSameDirection(remaining.forward, new Vector(0, 0, 1))) {
@@ -283,6 +297,13 @@ function onLinear(_x, _y, _z, feed) {
     } else {
       writeBlock(gMotionModal.format(1), f);
     }
+  }
+
+  if (isSpotWeld) {
+    writeBlock(mFormat.format(10)); // Laser on
+    onDwell(getProperty("dwellTime"));
+    writeBlock(mFormat.format(11)); // Laser off
+    writeln("");
   }
 }
 
